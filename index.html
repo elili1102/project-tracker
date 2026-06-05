@@ -575,36 +575,31 @@ var projects=getFilteredProjects();
 var container=document.getElementById('tableContainer');
 if(projects.length===0){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">📭 暂无项目数据，请导入Excel文件</div>';return;}
 
+function findVal(obj,patterns){var v=findField(obj,patterns);return (v!==''&&v!==null&&v!==undefined)?v:'—';}
+
 var html='<table class="data-table"><thead><tr>';
-html+='<th>序号</th><th>年份</th><th>部门</th><th>项目名称</th><th>类型</th><th>状态</th><th>填报进度</th><th>操作</th>';
+html+='<th>序号</th><th>年份</th><th>部门</th><th>项目名称</th><th>项目负责人</th><th>合同金额（万元）</th><th>中标单位</th><th>项目状态</th><th>操作</th>';
 html+='</tr></thead><tbody>';
 
 projects.forEach(function(p,idx){
 var name=getName(p);
 var dept=getDept(p);
 var year=getYear(p);
-var status=getStatus(p);
-var delayed=isDelayed(p);
-var typeClass=p._type==='已完成'?'completed':'uncompleted';
-
-var allHeaders=p._type==='已完成'?(appData.completed.headers||[]):(appData.uncompleted.headers||[]);
-var filled=0;var total=0;
-allHeaders.forEach(function(h){
-if(CATEGORIES.indexOf(h.category)>-1){total++;var v=p[h.key];if(v!==''&&v!==null&&v!==undefined)filled++;}
-});
-var rate=total>0?Math.round(filled/total*100):0;
-
-var statusHtml=status?'<span class="type-tag completed">'+status+'</span>':'—';
-if(delayed)statusHtml='<span class="type-tag delayed">延期</span>';
+var person=findVal(p,['项目负责人']);
+var amount=findVal(p,['合同金额']);
+var bidder=findVal(p,['中标单位']);
+var status=findVal(p,['项目状态']);
+if(status!=='—'){status='<span class="type-tag completed">'+status+'</span>';}
 
 html+='<tr>';
 html+='<td>'+(idx+1)+'</td>';
 html+='<td>'+year+'</td>';
 html+='<td>'+dept+'</td>';
-html+='<td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+name+'">'+name+'</td>';
-html+='<td><span class="type-tag '+typeClass+'">'+p._type+'</span></td>';
-html+='<td>'+statusHtml+'</td>';
-html+='<td><span class="progress-bar"><span class="fill" style="width:'+rate+'%"></span></span>'+rate+'%</td>';
+html+='<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+name+'">'+name+'</td>';
+html+='<td>'+person+'</td>';
+html+='<td>'+amount+'</td>';
+html+='<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+bidder+'">'+bidder+'</td>';
+html+='<td>'+status+'</td>';
 html+='<td><a class="action-link" onclick="showDetail('+idx+')">详情</a></td>';
 html+='</tr>';
 });
