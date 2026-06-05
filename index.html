@@ -48,7 +48,7 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 .tab-btn:hover{color:var(--primary);}
 .tab-content{display:none;padding:24px;max-width:1400px;margin:0 auto;}
 .tab-content.active{display:block;}
-.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:24px;}
 .kpi-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border-left:4px solid var(--primary);transition:transform .2s;}
 .kpi-card:hover{transform:translateY(-2px);}
 .kpi-card .label{font-size:13px;color:var(--text-muted);margin-bottom:8px;}
@@ -118,7 +118,8 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 .toast.success{background:#4CAF50;}.toast.error{background:#F44336;}.toast.warning{background:#FF9800;}.toast.info{background:#2196F3;}
 @media(max-width:768px){
 .header-btn{display:none!important;}
-.kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+.toolbar-left .btn-danger,.toolbar-left .btn-primary{display:none!important;}
+.kpi-grid{grid-template-columns:repeat(3,1fr);gap:10px;}
 .kpi-card{padding:14px;}
 .kpi-card .value{font-size:22px;}
 .chart-grid{grid-template-columns:1fr;}
@@ -147,7 +148,7 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 .modal{padding:16px;}
 }
 @media(max-width:480px){
-.kpi-grid{grid-template-columns:1fr 1fr;gap:8px;}
+.kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
 .kpi-card{padding:12px;border-left-width:3px;}
 .kpi-card .value{font-size:20px;}
 .kpi-card .label{font-size:12px;}
@@ -496,6 +497,10 @@ html+='<div class="kpi-card"><div class="label">已完成</div><div class="value
 html+='<div class="kpi-card"><div class="label">未完成</div><div class="value" style="color:#E65100">'+(uncomp+noStatus)+'</div><div class="sub">'+(all.length>0?'占比 '+Math.round((uncomp+noStatus)/all.length*100)+'%':'暂无数据')+'</div></div>';
 html+='<div class="kpi-card warn"><div class="label">延期项目</div><div class="value">'+delayed+'</div><div class="sub">'+(all.length>0?'占比 '+Math.round(delayed/all.length*100)+'%':'暂无延期数据')+'</div></div>';
 html+='<div class="kpi-card"><div class="label">涉及部门</div><div class="value">'+Object.keys(depts).length+'</div><div class="sub">覆盖部门数</div></div>';
+var amountKey='基本情况.合同金额（万元）';
+var totalAmount=0;
+all.forEach(function(p){var v=parseFloat((p[amountKey]||'').toString().replace(/[,，]/g,''));if(!isNaN(v))totalAmount+=v;});
+html+='<div class="kpi-card" style="border-left-color:#1565C0"><div class="label">合同总额</div><div class="value" style="color:#1565C0">'+(totalAmount>0?totalAmount.toFixed(1)+'万':'—')+'</div><div class="sub">'+(totalAmount>0?'平均 '+(totalAmount/all.length).toFixed(1)+'万/项目':'暂无金额数据')+'</div></div>';
 document.getElementById('kpiGrid').innerHTML=html;
 
 if(echartsReady&&all.length>0){
