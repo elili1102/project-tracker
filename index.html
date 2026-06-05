@@ -187,7 +187,14 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 </div>
 <div class="chart-grid">
 <div class="chart-card"><h3>完成情况</h3><div class="chart-box" id="chartStatus"></div></div>
-<div class="chart-card"><h3>项目总体进度</h3><div class="chart-box" id="chartFill"></div></div>
+<div class="chart-card"><h3>项目储备情况</h3><div class="chart-box" id="chartReserve"></div></div>
+</div>
+<div class="chart-grid">
+<div class="chart-card"><h3>项目进度情况</h3><div class="chart-box" id="chartProgress"></div></div>
+<div class="chart-card"><h3>资金执行情况</h3><div class="chart-box" id="chartFund"></div></div>
+</div>
+<div class="chart-grid">
+<div class="chart-card"><h3>质保履行情况</h3><div class="chart-box" id="chartWarranty"></div></div>
 </div>
 </div>
 
@@ -507,10 +514,13 @@ if(echartsReady&&all.length>0){
 renderDeptChart(all);
 renderYearChart(all);
 renderStatusChart(comp,uncomp,noStatus,delayed);
-renderFillChart();
+renderReserveChart(all);
+renderProgressChart(all);
+renderFundChart(all);
+renderWarrantyChart(all);
 }else{
 var msg=all.length===0?'暂无数据，请先导入Excel':'图表加载中...';
-['chartDept','chartYear','chartStatus','chartFill'].forEach(function(id){
+['chartDept','chartYear','chartStatus','chartReserve','chartProgress','chartFund','chartWarranty'].forEach(function(id){
 document.getElementById(id).innerHTML='<div class="empty-chart">'+msg+'</div>';
 });
 }
@@ -563,47 +573,83 @@ series:[{type:'pie',radius:['40%','65%'],center:['50%','45%'],label:{formatter:'
 }
 
 /* 填报进度 */
-function renderFillChart(){
-var catData={};
-CATEGORIES.forEach(function(c){catData[c]={filled:0,total:0};});
-
-function countFields(headers,projects){
-headers.forEach(function(h){
-if(CATEGORIES.indexOf(h.category)>-1){
-catData[h.category].total+=projects.length;
-projects.forEach(function(p){
-var v=p[h.key];
-if(v!==''&&v!==null&&v!==undefined)catData[h.category].filled++;
-});
-}
-});
-}
-countFields(appData.completed.headers||[],appData.completed.projects||[]);
-countFields(appData.uncompleted.headers||[],appData.uncompleted.projects||[]);
-
-var cats=[];
-var rates=[];
-var filledCounts=[];
-var totalCounts=[];
-CATEGORIES.forEach(function(c){
-var short=c.replace('情况','').replace('项目','');
-var t=catData[c].total;
-var f=catData[c].filled;
-var rate=t>0?Math.round(f/t*100):0;
-cats.push(short);
-rates.push(rate);
-filledCounts.push(f);
-totalCounts.push(t);
-});
-
-var chart=echarts.init(document.getElementById('chartFill'));
+/* 项目储备情况 - 批次分布 */
+function renderReserveChart(all){
+var key='项目储备情况.技术服务项目批次';
+var map={};
+all.forEach(function(p){var v=(p[key]||'').toString().trim()||'未填报';map[v]=(map[v]||0)+1;});
+var items=Object.keys(map).map(function(k){return{name:k,value:map[k]};}).sort(function(a,b){return b.value-a.value;});
+var chart=echarts.init(document.getElementById('chartReserve'));
 chartInstances.push(chart);
 chart.setOption({
-tooltip:{trigger:'axis',formatter:function(p){return p[0].name+'<br/>填报率: '+p[0].value+'%<br/>已填: '+filledCounts[p[0].dataIndex]+' / '+totalCounts[p[0].dataIndex];}},
-grid:{left:90,right:40,top:10,bottom:20},
+tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
+legend:{bottom:0,textStyle:{fontSize:12}},
+series:[{type:'pie',radius:['35%','60%'],center:['50%','42%'],label:{formatter:'{b}\n{c}个',fontSize:11},data:items.map(function(d,i){return{name:d.name,value:d.value,itemStyle:{color:['#006B54','#008667','#4CAF50','#81C784','#A5D6A7','#C8E6C9','#E8F5E9'][i%7]}};})}]
+});
+}
+
+/* 项目进度情况 - 各阶段完成率 */
+function renderProgressChart(all){
+var stages=[
+{name:'合同签订',actualKey:'项目进度情况.实际合同签订时间'},
+{name:'项目启动',actualKey:'项目进度情况.实际项目启动时间'},
+{name:'项目验收',actualKey:'项目进度情况.实际验收时间'},
+{name:'项目结算',actualKey:'项目进度情况.实际结算时间'},
+{name:'资料归档',actualKey:'项目进度情况.实际归档时间'}
+];
+var names=[];var rates=[];var doneCounts=[];var totalCounts=[];
+stages.forEach(function(s){
+var done=all.filter(function(p){return(p[s.actualKey]||'').toString().trim()!=='';}).length;
+var total=all.length;
+var rate=total>0?Math.round(done/total*100):0;
+names.push(s.name);rates.push(rate);doneCounts.push(done);totalCounts.push(total);
+});
+var chart=echarts.init(document.getElementById('chartProgress'));
+chartInstances.push(chart);
+chart.setOption({
+tooltip:{trigger:'axis',formatter:function(p){return p[0].name+'<br/>完成率: '+p[0].value+'%<br/>已完成: '+doneCounts[p[0].dataIndex]+' / '+totalCounts[p[0].dataIndex];}},
+grid:{left:80,right:40,top:10,bottom:20},
 xAxis:{type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#999'},splitLine:{lineStyle:{color:'#f0f0f0'}},axisLine:{show:false},axisTick:{show:false}},
-yAxis:{type:'category',data:cats,axisLabel:{color:'#333',fontSize:12},axisLine:{lineStyle:{color:'#ddd'}},axisTick:{show:false}},
-series:[{type:'bar',data:rates.map(function(r){return{value:r,itemStyle:{color:r>=80?'#4CAF50':r>=50?'#FF9800':r>0?'#F44336':'#E0E0E0',borderRadius:[0,4,4,0]}};}),barWidth:16,label:{show:true,position:'right',formatter:'{c}%',fontSize:12,color:'#666'}}]
+yAxis:{type:'category',data:names,axisLabel:{color:'#333',fontSize:12},axisLine:{lineStyle:{color:'#ddd'}},axisTick:{show:false}},
+series:[{type:'bar',data:rates.map(function(r){return{value:r,itemStyle:{color:r>=80?'#4CAF50':r>=50?'#FF9800':r>0?'#E65100':'#E0E0E0',borderRadius:[0,4,4,0]}};}),barWidth:16,label:{show:true,position:'right',formatter:'{c}%',fontSize:12,color:'#666'}}]
+});
+}
+
+/* 资金执行情况 - 付款进度 */
+function renderFundChart(all){
+var rateKey='资金执行情况.付款进度完成率';
+var buckets={已完成:0,进行中:0,未开始:0};
+all.forEach(function(p){
+var v=parseFloat((p[rateKey]||'').toString().replace('%','').replace(/[,，]/g,''));
+if(!isNaN(v)&&v>0){if(v>=100)buckets['已完成']++;else buckets['进行中']++;}
+else{var ratio=(p['资金执行情况.合同付款比例']||'').toString().trim();if(ratio)buckets['进行中']++;else buckets['未开始']++;}
+});
+var data=[{name:'已完成付款',value:buckets['已完成'],itemStyle:{color:'#2E7D32'}},{name:'付款进行中',value:buckets['进行中'],itemStyle:{color:'#FF9800'}},{name:'未开始付款',value:buckets['未开始'],itemStyle:{color:'#E0E0E0'}}];
+var chart=echarts.init(document.getElementById('chartFund'));
+chartInstances.push(chart);
+chart.setOption({
+tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
+legend:{bottom:0,textStyle:{fontSize:12}},
+series:[{type:'pie',radius:['35%','60%'],center:['50%','42%'],label:{formatter:'{b}\n{c}个',fontSize:11},data:data}]
+});
+}
+
+/* 质保履行情况 */
+function renderWarrantyChart(all){
+var expireKey='质保履行情况.质保是否到期';
+var payKey='质保履行情况.是否完成质保款付款';
+var expired=0,active=0,noData=0;
+all.forEach(function(p){
+var e=(p[expireKey]||'').toString().trim();
+if(e==='是')expired++;else if(e==='否')active++;else noData++;
+});
+var data=[{name:'已到期',value:expired,itemStyle:{color:'#E65100'}},{name:'未到期',value:active,itemStyle:{color:'#2E7D32'}},{name:'未填报',value:noData,itemStyle:{color:'#E0E0E0'}}];
+var chart=echarts.init(document.getElementById('chartWarranty'));
+chartInstances.push(chart);
+chart.setOption({
+tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
+legend:{bottom:0,textStyle:{fontSize:12}},
+series:[{type:'pie',radius:['35%','60%'],center:['50%','42%'],label:{formatter:'{b}\n{c}个',fontSize:11},data:data}]
 });
 }
 
