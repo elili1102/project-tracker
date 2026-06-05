@@ -389,86 +389,55 @@ reader.onload=function(e){
 try{
 if(typeof XLSX==='undefined')throw new Error('XLSX库未加载，请刷新页面');
 var data=new Uint8Array(e.target.result);
-var wb=XLSX.read(data,{type:'array',cellDates:true,cellNF:false,cellText:false});
+var wb=XLSX.read(data,{type:'array'});
 var sheet=wb.Sheets[wb.SheetNames[0]];
 if(!sheet||!sheet['!ref'])throw new Error('Excel文件为空或格式异常');
-var range=XLSX.utils.decode_range(sheet['!ref']);
-var merges=sheet['!merges']||[];
 
-/* 检测类型：从A1标题判断 */
-var titleCell=sheet[XLSX.utils.encode_cell({r:0,c:0})];
-var title=(titleCell&&titleCell.v)?String(titleCell.v):'';
+/* 用sheet_to_json自动处理合并单元格，最安全 */
+var rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+if(rows.length<6)throw new Error('Excel数据行数不足');
+
+/* 检测类型 */
+var title=String(rows[0][0]||'');
 var isCompleted=title.indexOf('已完成')>-1;
 if(title.indexOf('已完成')===-1&&title.indexOf('未完成')===-1){
-/* 无法自动识别，按文件名判断 */
-isCompleted=file.name.indexOf('已完成')>-1||file.name.indexOf('已完成')>-1;
+isCompleted=file.name.indexOf('已完成')>-1;
 }
 
-/* 解析三级表头 rows 1-3 (0-indexed，跳过row0标题) */
-var maxC=range.e.c;
-var grid=[];
-for(var r=1;r<=3;r++){
-var row=[];
-for(var c=0;c<=maxC;c++){
-try{
-var cell=sheet[XLSX.utils.encode_cell({r:r,c:c})];
-if(cell&&cell.v!==undefined&&cell.v!==null){
-row.push(String(cell.v).trim());
-}else{
-row.push('');
-}
-}catch(ex){row.push('');}
-}
-grid.push(row);
-}
+/* 表头行: row1=一级分类, row2=二级字段, row3=三级字段, row4=说明(跳过) */
+var hRow1=rows[1]||[];
+var hRow2=rows[2]||[];
+var hRow3=rows[3]||[];
+var maxCol=Math.max(hRow1.length,hRow2.length,hRow3.length);
 
-/* 安全填充合并单元格 */
-for(var mi=0;mi<merges.length;mi++){
-var m=merges[mi];
-if(!m||!m.s||!m.e)continue;
-if(m.s.r>=1&&m.s.e.r<=3){
-var srcC=m.s.c;
-var val=grid[m.s.r-1]?(grid[m.s.r-1][srcC]||''):'';
-for(var mr=m.s.r;mr<=Math.min(m.e.r,3);mr++){
-for(var mc=m.s.c;mc<=Math.min(m.e.c,maxC);mc++){
-if(grid[mr-1]&&grid[mr-1][mc]===undefined)grid[mr-1][mc]='';
-if(grid[mr-1]&&!grid[mr-1][mc]){
-grid[mr-1][mc]=val;
-}
-}
-}
-}
-}
-
-/* 构建字段定义 */
 var headers=[];
-for(var ci=0;ci<=maxC;ci++){
+for(var ci=0;ci<maxCol;ci++){
 var parts=[];
-for(var ri=0;ri<3;ri++){
-var v=grid[ri]?grid[ri][ci]:'';
-if(v&&parts.indexOf(v)===-1)parts.push(v);
-}
+var v1=String(hRow1[ci]||'').trim();
+var v2=String(hRow2[ci]||'').trim();
+var v3=String(hRow3[ci]||'').trim();
+if(v1&&parts.indexOf(v1)===-1)parts.push(v1);
+if(v2&&parts.indexOf(v2)===-1)parts.push(v2);
+if(v3&&parts.indexOf(v3)===-1)parts.push(v3);
 var fullKey=parts.join('.').replace(/[\s\r\n]+/g,'');
 var category=(parts[0]||'其他').replace(/[\s\r\n]+/g,'');
 var label=(parts[parts.length-1]||('列'+(ci+1))).replace(/[\s\r\n]+/g,' ');
 headers.push({key:fullKey,category:category,label:label});
 }
 
-/* 解析数据 rows 5+ (0-indexed，跳过row0标题+row1-3表头+row4说明) */
+/* 数据从row5开始(0-indexed), row4是说明行跳过 */
 var projects=[];
-for(var dr=5;dr<=range.e.r;dr++){
+for(var dr=5;dr<rows.length;dr++){
+var row=rows[dr];
+if(!row)continue;
 var proj={_type:isCompleted?'已完成':'未完成'};
 var hasData=false;
-for(var dc=0;dc<=maxC;dc++){
-try{
-var dcell=sheet[XLSX.utils.encode_cell({r:dr,c:dc})];
+for(var dc=0;dc<maxCol;dc++){
 var h=headers[dc];
-if(h){
-var val=(dcell&&dcell.v!==undefined&&dcell.v!==null)?dcell.v:'';
+if(!h)continue;
+var val=(dc<row.length)?row[dc]:'';
 proj[h.key]=val;
 if(val!==''&&val!==null&&val!==undefined)hasData=true;
-}
-}catch(ex){}
 }
 if(hasData)projects.push(proj);
 }
