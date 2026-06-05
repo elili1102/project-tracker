@@ -334,9 +334,53 @@ showToast('正在解析...','info');
 for(var i=0;i<files.length;i++){
 try{
 var result=await parseExcelFile(files[i]);
-if(result.type==='completed'){appData.completed=result;}
-else{appData.uncompleted=result;}
-showToast('「'+(result.type==='completed'?'已完成':'未完成')+'」导入成功，共'+result.projects.length+'个项目','success');
+var key=result.type==='completed'?'completed':'uncompleted';
+var existing=appData[key]||{headers:[],projects:[]};
+
+/* 查重：以项目名称为唯一标识，新导入覆盖旧数据 */
+var newHeaders=result.headers;
+var newProjects=result.projects;
+var oldProjects=existing.projects||[];
+var oldHeaders=existing.headers||[];
+
+/* 构建旧项目索引：项目名称 → 位置 */
+var oldIndex={};
+for(var oi=0;oi<oldProjects.length;oi++){
+var oldName=getName(oldProjects[oi]);
+if(oldName&&oldName!=='—')oldIndex[oldName]=oi;
+}
+
+var merged=[];
+var addedCount=0;
+var updatedCount=0;
+
+/* 先处理新项目 */
+for(var ni=0;ni<newProjects.length;ni++){
+var newName=getName(newProjects[ni]);
+if(oldIndex.hasOwnProperty(newName)){
+/* 已存在→更新，保留旧_id */
+newProjects[ni]._id=oldProjects[oldIndex[newName]]._id||oldIndex[newName];
+updatedCount++;
+delete oldIndex[newName]; /* 标记已处理 */
+}
+merged.push(newProjects[ni]);
+}
+
+/* 未被新项目覆盖的旧项目保留 */
+var remaining=Object.keys(oldIndex);
+for(var ri=0;ri<remaining.length;ri++){
+merged.push(oldProjects[oldIndex[remaining[ri]]]);
+}
+
+addedCount=newProjects.length-updatedCount;
+
+appData[key]={headers:newHeaders.length>0?newHeaders:oldHeaders,projects:merged};
+
+var label=result.type==='completed'?'已完成':'未完成';
+var msg='「'+label+'」导入成功：共'+newProjects.length+'个';
+if(updatedCount>0)msg+='（更新'+updatedCount+'个，新增'+addedCount+'个）';
+else msg+='（全部新增）';
+showToast(msg,'success');
 }catch(e){showToast('解析失败: '+e.message,'error');}
 }
 await saveData();
