@@ -199,8 +199,8 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 <div class="toolbar-right">
 <div class="filter-group">
 <button class="filter-btn active" onclick="setFilter('all',this)">全部</button>
-<button class="filter-btn" onclick="setFilter('completed',this)">已完成</button>
-<button class="filter-btn" onclick="setFilter('uncompleted',this)">未完成</button>
+<button class="filter-btn" onclick="setFilter('completed',this)">已完成入账</button>
+<button class="filter-btn" onclick="setFilter('uncompleted',this)">未完成入账</button>
 </div>
 </div>
 </div>
@@ -494,9 +494,9 @@ var depts={};
 all.forEach(function(p){depts[getDept(p)]=true;});
 
 var html='';
-html+='<div class="kpi-card"><div class="label">项目总数</div><div class="value">'+all.length+'</div><div class="sub">已完成 '+comp+' / 未完成 '+uncomp+'</div></div>';
-html+='<div class="kpi-card"><div class="label">已完成项目</div><div class="value" style="color:#2E7D32">'+comp+'</div><div class="sub">已全额入账</div></div>';
-html+='<div class="kpi-card"><div class="label">未完成项目</div><div class="value" style="color:#E65100">'+uncomp+'</div><div class="sub">未全额入账</div></div>';
+html+='<div class="kpi-card"><div class="label">项目总数</div><div class="value">'+all.length+'</div><div class="sub">已入账 '+comp+' / 未入账 '+uncomp+'</div></div>';
+html+='<div class="kpi-card"><div class="label">已完成入账</div><div class="value" style="color:#2E7D32">'+comp+'</div><div class="sub">已全额入账项目</div></div>';
+html+='<div class="kpi-card"><div class="label">未完成入账</div><div class="value" style="color:#E65100">'+uncomp+'</div><div class="sub">未全额入账项目</div></div>';
 html+='<div class="kpi-card warn"><div class="label">延期项目</div><div class="value">'+delayed+'</div><div class="sub">'+(all.length>0?'占比 '+Math.round(delayed/all.length*100)+'%':'暂无延期数据')+'</div></div>';
 html+='<div class="kpi-card"><div class="label">涉及部门</div><div class="value">'+Object.keys(depts).length+'</div><div class="sub">覆盖部门数</div></div>';
 document.getElementById('kpiGrid').innerHTML=html;
