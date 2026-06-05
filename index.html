@@ -205,12 +205,7 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 </div>
 </div>
 
-<div class="import-zone" id="importZone" onclick="triggerImport()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-<div class="icon">📁</div>
-<div class="title">点击或拖拽导入Excel文件</div>
-<div class="desc">支持导入「已完成全额入账」和「未完成全额入账」两种跟踪表模板，数据自动识别分类</div>
-<input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileSelect(event)" multiple>
-</div>
+<input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileSelect(event)" multiple style="display:none">
 
 <div class="table-wrap"><div id="tableContainer"></div></div>
 </div>
