@@ -387,75 +387,95 @@ return new Promise(function(resolve,reject){
 var reader=new FileReader();
 reader.onload=function(e){
 try{
+if(typeof XLSX==='undefined')throw new Error('XLSX库未加载，请刷新页面');
 var data=new Uint8Array(e.target.result);
-var wb=XLSX.read(data,{type:'array'});
+var wb=XLSX.read(data,{type:'array',cellDates:true,cellNF:false,cellText:false});
 var sheet=wb.Sheets[wb.SheetNames[0]];
+if(!sheet||!sheet['!ref'])throw new Error('Excel文件为空或格式异常');
 var range=XLSX.utils.decode_range(sheet['!ref']);
 var merges=sheet['!merges']||[];
 
-var titleCell=sheet['A1'];
-var title=titleCell?String(titleCell.v):'';
+/* 检测类型：从A1标题判断 */
+var titleCell=sheet[XLSX.utils.encode_cell({r:0,c:0})];
+var title=(titleCell&&titleCell.v)?String(titleCell.v):'';
 var isCompleted=title.indexOf('已完成')>-1;
+if(title.indexOf('已完成')===-1&&title.indexOf('未完成')===-1){
+/* 无法自动识别，按文件名判断 */
+isCompleted=file.name.indexOf('已完成')>-1||file.name.indexOf('已完成')>-1;
+}
 
-/* 解析三级表头 rows 1-3 (0-indexed) */
+/* 解析三级表头 rows 1-3 (0-indexed，跳过row0标题) */
+var maxC=range.e.c;
 var grid=[];
 for(var r=1;r<=3;r++){
 var row=[];
-for(var c=range.s.c;c<=range.e.c;c++){
+for(var c=0;c<=maxC;c++){
+try{
 var cell=sheet[XLSX.utils.encode_cell({r:r,c:c})];
-row.push(cell?String(cell.v).trim():'');
+if(cell&&cell.v!==undefined&&cell.v!==null){
+row.push(String(cell.v).trim());
+}else{
+row.push('');
+}
+}catch(ex){row.push('');}
 }
 grid.push(row);
 }
-/* 填充合并单元格 */
+
+/* 安全填充合并单元格 */
 for(var mi=0;mi<merges.length;mi++){
 var m=merges[mi];
+if(!m||!m.s||!m.e)continue;
 if(m.s.r>=1&&m.s.e.r<=3){
-var val=grid[m.s.r-1][m.s.c-range.s.c];
-for(var mr=m.s.r;mr<=m.e.r;mr++){
-for(var mc=m.s.c;mc<=m.e.c;mc++){
-if(mr>=1&&mr<=3){
-if(!grid[mr-1][mc-range.s.c]){
-grid[mr-1][mc-range.s.c]=val;
+var srcC=m.s.c;
+var val=grid[m.s.r-1]?(grid[m.s.r-1][srcC]||''):'';
+for(var mr=m.s.r;mr<=Math.min(m.e.r,3);mr++){
+for(var mc=m.s.c;mc<=Math.min(m.e.c,maxC);mc++){
+if(grid[mr-1]&&grid[mr-1][mc]===undefined)grid[mr-1][mc]='';
+if(grid[mr-1]&&!grid[mr-1][mc]){
+grid[mr-1][mc]=val;
 }
 }
 }
 }
 }
-}
+
 /* 构建字段定义 */
 var headers=[];
-for(var ci=range.s.c;ci<=range.e.c;ci++){
-var idx=ci-range.s.c;
+for(var ci=0;ci<=maxC;ci++){
 var parts=[];
 for(var ri=0;ri<3;ri++){
-var v=grid[ri][idx];
+var v=grid[ri]?grid[ri][ci]:'';
 if(v&&parts.indexOf(v)===-1)parts.push(v);
 }
-var fullKey=parts.join('.').replace(/\s+/g,'');
-var category=(parts[0]||'其他').replace(/\s+/g,'');
-var label=(parts[parts.length-1]||('列'+(idx+1))).replace(/\s+/g,' ');
+var fullKey=parts.join('.').replace(/[\s\r\n]+/g,'');
+var category=(parts[0]||'其他').replace(/[\s\r\n]+/g,'');
+var label=(parts[parts.length-1]||('列'+(ci+1))).replace(/[\s\r\n]+/g,' ');
 headers.push({key:fullKey,category:category,label:label});
 }
 
-/* 解析数据 rows 5+ (0-indexed, 跳过row4说明行) */
+/* 解析数据 rows 5+ (0-indexed，跳过row0标题+row1-3表头+row4说明) */
 var projects=[];
 for(var dr=5;dr<=range.e.r;dr++){
 var proj={_type:isCompleted?'已完成':'未完成'};
 var hasData=false;
-for(var dc=range.s.c;dc<=range.e.c;dc++){
+for(var dc=0;dc<=maxC;dc++){
+try{
 var dcell=sheet[XLSX.utils.encode_cell({r:dr,c:dc})];
-var h=headers[dc-range.s.c];
+var h=headers[dc];
 if(h){
-var val=dcell?dcell.v:'';
+var val=(dcell&&dcell.v!==undefined&&dcell.v!==null)?dcell.v:'';
 proj[h.key]=val;
 if(val!==''&&val!==null&&val!==undefined)hasData=true;
 }
+}catch(ex){}
 }
 if(hasData)projects.push(proj);
 }
+
+if(projects.length===0)throw new Error('未找到有效数据行，请检查Excel格式');
 resolve({type:isCompleted?'completed':'uncompleted',headers:headers,projects:projects});
-}catch(e){reject(e);}
+}catch(e){reject(new Error(e.message||'解析异常'));}
 };
 reader.onerror=function(){reject(new Error('文件读取失败'));};
 reader.readAsArrayBuffer(file);
