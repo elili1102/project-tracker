@@ -24,13 +24,13 @@ document.head.appendChild(s);
 tryLoad();
 })();
 </script>
-<script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" id="xlsx-script"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
 --primary:#006B54;--primary-light:#008667;--primary-lighter:#4CAF50;
 --primary-bg:#E8F5E9;--bg:#F5F7FA;--card:#fff;--text:#333;
 --text-muted:#999;--border:#E0E0E0;--shadow:0 2px 12px rgba(0,0,0,.08);
---radius:8px;
+--radius:8px;--orange:#E65100;--red:#D32F2F;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
@@ -48,17 +48,19 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 .tab-btn:hover{color:var(--primary);}
 .tab-content{display:none;padding:24px;max-width:1400px;margin:0 auto;}
 .tab-content.active{display:block;}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;}
 .kpi-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border-left:4px solid var(--primary);transition:transform .2s;}
 .kpi-card:hover{transform:translateY(-2px);}
 .kpi-card .label{font-size:13px;color:var(--text-muted);margin-bottom:8px;}
 .kpi-card .value{font-size:28px;font-weight:700;color:var(--primary);}
 .kpi-card .sub{font-size:12px;color:var(--text-muted);margin-top:4px;}
+.kpi-card.warn{border-left-color:var(--orange);}
+.kpi-card.warn .value{color:var(--orange);}
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 .chart-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
 .chart-card h3{font-size:14px;color:var(--text);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.chart-box{width:100%;height:300px;}
-.empty-chart{display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-muted);font-size:14px;}
+.chart-box{width:100%;height:320px;}
+.empty-chart{display:flex;align-items:center;justify-content:center;height:320px;color:var(--text-muted);font-size:14px;}
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
 .toolbar-left{display:flex;align-items:center;gap:12px;}
 .toolbar-right{display:flex;align-items:center;gap:12px;}
@@ -83,6 +85,7 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 .data-table .type-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;}
 .type-tag.completed{background:#E8F5E9;color:#2E7D32;}
 .type-tag.uncompleted{background:#FFF3E0;color:#E65100;}
+.type-tag.delayed{background:#FFEBEE;color:#C62828;}
 .progress-bar{width:80px;height:6px;background:#eee;border-radius:3px;display:inline-block;vertical-align:middle;margin-right:6px;}
 .progress-bar .fill{height:100%;border-radius:3px;background:var(--primary-lighter);transition:width .3s;}
 .action-link{color:var(--primary);cursor:pointer;text-decoration:none;font-size:13px;}
@@ -99,7 +102,7 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 .category-section{margin-bottom:20px;}
 .category-title{font-size:14px;font-weight:600;color:var(--primary);padding:8px 12px;background:var(--primary-bg);border-radius:6px;margin-bottom:12px;}
 .field-row{display:flex;padding:8px 12px;border-bottom:1px solid #f5f5f5;align-items:flex-start;}
-.field-label{width:140px;flex-shrink:0;font-size:13px;color:var(--text-muted);}
+.field-label{width:160px;flex-shrink:0;font-size:13px;color:var(--text-muted);}
 .field-value{flex:1;font-size:13px;color:var(--text);word-break:break-all;}
 .field-value.empty{color:#ccc;font-style:italic;}
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:300;display:none;align-items:center;justify-content:center;}
@@ -113,8 +116,6 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 .toast{position:fixed;top:80px;right:24px;padding:12px 20px;border-radius:6px;color:#fff;font-size:13px;z-index:400;transform:translateX(120%);transition:transform .3s;box-shadow:0 4px 12px rgba(0,0,0,.15);}
 .toast.show{transform:translateX(0);}
 .toast.success{background:#4CAF50;}.toast.error{background:#F44336;}.toast.warning{background:#FF9800;}.toast.info{background:#2196F3;}
-.no-data-hint{text-align:center;padding:40px;color:var(--text-muted);font-size:14px;}
-.no-data-hint .icon{font-size:48px;margin-bottom:12px;display:block;}
 @media(max-width:768px){
 .kpi-grid{grid-template-columns:repeat(2,1fr);}
 .chart-grid{grid-template-columns:1fr;}
@@ -144,12 +145,12 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 <div class="tab-content active" id="tab-dashboard">
 <div class="kpi-grid" id="kpiGrid"></div>
 <div class="chart-grid">
-<div class="chart-card"><h3>部门项目分布</h3><div class="chart-box" id="chartDept"></div></div>
+<div class="chart-card"><h3>各部门项目数量</h3><div class="chart-box" id="chartDept"></div></div>
 <div class="chart-card"><h3>年份项目分布</h3><div class="chart-box" id="chartYear"></div></div>
 </div>
 <div class="chart-grid">
+<div class="chart-card"><h3>已完成 vs 未完成</h3><div class="chart-box" id="chartStatus"></div></div>
 <div class="chart-card"><h3>数据填报进度</h3><div class="chart-box" id="chartFill"></div></div>
-<div class="chart-card"><h3>项目状态分布</h3><div class="chart-box" id="chartStatus"></div></div>
 </div>
 </div>
 
@@ -198,7 +199,7 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 </div>
 <div class="note">
 💡 Token用于将数据同步到GitHub，使所有访问者都能看到最新数据。<br>
-Token需要<code>repo</code>权限，仅在导入数据时使用，不会被硬编码到页面中。<br>
+Token需要<code>repo</code>权限，仅在导入数据时使用。<br>
 读取数据无需Token（公开仓库）。
 </div>
 </div>
@@ -210,23 +211,20 @@ Token需要<code>repo</code>权限，仅在导入数据时使用，不会被硬�
 (function(){
 'use strict';
 
-/* ====== 配置 ====== */
 var REPO='elili1102/project-tracker';
 var DATA_FILE='data.json';
 var CATEGORIES=['基本情况','项目性质情况','项目储备情况','项目进度情况','项目延期情况','资金执行情况','质保履行情况'];
 
-/* ====== 全局数据 ====== */
 var appData={lastUpdate:null,completed:{headers:[],projects:[]},uncompleted:{headers:[],projects:[]}};
 var currentFilter='all';
 var echartsReady=false;
+var chartInstances=[];
 
-/* ====== 事件监听 ====== */
 window.addEventListener('echarts-ready',function(){
 echartsReady=true;
 renderDashboard();
 });
 
-/* ====== Tab切换 ====== */
 window.switchTab=function(tab){
 document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
 document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
@@ -241,6 +239,29 @@ renderTable();
 }
 };
 
+/* ====== 字段查找 ====== */
+function findField(obj,patterns){
+for(var key in obj){
+for(var i=0;i<patterns.length;i++){
+if(key.indexOf(patterns[i])>-1)return obj[key];
+}
+}
+return null;
+}
+function getDept(p){return findField(p,['实施部门','部门','单位'])||'未知';}
+function getYear(p){var v=findField(p,['年份']);if(typeof v==='number')v=String(v);return v||'未知';}
+function getName(p){return findField(p,['项目名称'])||'—';}
+function getStatus(p){return findField(p,['项目状态'])||'';}
+function getDelay(p){var v=findField(p,['是否延期']);return v||'';}
+function isDelayed(p){var v=getDelay(p);return String(v).indexOf('是')>-1;}
+
+function getAllProjects(){
+var list=[];
+(appData.completed.projects||[]).forEach(function(p){list.push(p);});
+(appData.uncompleted.projects||[]).forEach(function(p){list.push(p);});
+return list;
+}
+
 /* ====== 数据加载 ====== */
 async function loadData(){
 updateSync('yellow','加载中...');
@@ -254,17 +275,12 @@ updateSync('green','已同步 '+formatTime(data.lastUpdate));
 renderAll();
 return;
 }
-}catch(e){console.warn('云端加载失败:',e);}
-
+}catch(e){}
 var local=localStorage.getItem('projectData');
 if(local){
-try{
-appData=JSON.parse(local);
-updateSync('red','本地数据 '+formatTime(appData.lastUpdate));
-}catch(e){appData={lastUpdate:null,completed:{headers:[],projects:[]},uncompleted:{headers:[],projects:[]}};}
-}else{
-updateSync('red','暂无数据');
-}
+try{appData=JSON.parse(local);updateSync('red','本地数据 '+formatTime(appData.lastUpdate));}
+catch(e){appData={lastUpdate:null,completed:{headers:[],projects:[]},uncompleted:{headers:[],projects:[]}};}
+}else{updateSync('red','暂无数据');}
 renderAll();
 }
 
@@ -273,111 +289,55 @@ async function saveData(){
 appData.lastUpdate=new Date().toISOString();
 localStorage.setItem('projectData',JSON.stringify(appData));
 renderAll();
-
 var pat=localStorage.getItem('github_pat');
-if(!pat){
-updateSync('red','本地数据（未配置同步Token）');
-showToast('数据已保存到本地，配置Token后可同步到云端','warning');
-return;
-}
+if(!pat){updateSync('red','本地数据（未配置同步Token）');showToast('数据已保存到本地，配置Token后可同步到云端','warning');return;}
 updateSync('yellow','正在同步...');
 try{
 var sha=null;
-var getResp=await fetch('https://api.github.com/repos/'+REPO+'/contents/'+DATA_FILE,{
-headers:{'Authorization':'token '+pat}
-});
-if(getResp.ok){
-var fileData=await getResp.json();
-sha=fileData.sha;
-}
+var getResp=await fetch('https://api.github.com/repos/'+REPO+'/contents/'+DATA_FILE,{headers:{'Authorization':'token '+pat}});
+if(getResp.ok){sha=(await getResp.json()).sha;}
 var content=btoa(unescape(encodeURIComponent(JSON.stringify(appData,null,2))));
 var body={message:'更新数据 '+new Date().toLocaleString('zh-CN'),content:content};
 if(sha)body.sha=sha;
 var putResp=await fetch('https://api.github.com/repos/'+REPO+'/contents/'+DATA_FILE,{
-method:'PUT',
-headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
+method:'PUT',headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
 body:JSON.stringify(body)
 });
-if(putResp.ok){
-updateSync('green','已同步 '+formatTime(appData.lastUpdate));
-showToast('数据已同步到云端','success');
-}else{
-var err=await putResp.json();
-updateSync('red','同步失败');
-showToast('同步失败: '+(err.message||'未知错误'),'error');
-}
-}catch(e){
-updateSync('red','同步失败');
-showToast('网络错误，数据仅保存在本地','error');
-}
+if(putResp.ok){updateSync('green','已同步 '+formatTime(appData.lastUpdate));showToast('数据已同步到云端','success');}
+else{var err=await putResp.json();updateSync('red','同步失败');showToast('同步失败: '+(err.message||'未知错误'),'error');}
+}catch(e){updateSync('red','同步失败');showToast('网络错误，数据仅保存在本地','error');}
 }
 
-/* ====== 从云端同步 ====== */
 window.syncFromCloud=async function(){
 updateSync('yellow','正在同步...');
 try{
 var resp=await fetch('https://raw.githubusercontent.com/'+REPO+'/main/'+DATA_FILE+'?t='+Date.now());
-if(resp.ok){
-var data=await resp.json();
-appData=data;
-localStorage.setItem('projectData',JSON.stringify(data));
-updateSync('green','已同步 '+formatTime(data.lastUpdate));
-renderAll();
-showToast('数据同步成功','success');
-}else{
-updateSync('red','同步失败');
-showToast('云端暂无数据','warning');
-}
+if(resp.ok){var data=await resp.json();appData=data;localStorage.setItem('projectData',JSON.stringify(data));updateSync('green','已同步 '+formatTime(data.lastUpdate));renderAll();showToast('数据同步成功','success');}
+else{updateSync('red','同步失败');showToast('云端暂无数据','warning');}
 }catch(e){
 var local=localStorage.getItem('projectData');
 if(local){appData=JSON.parse(local);updateSync('red','本地数据');renderAll();}
-showToast('网络错误，已加载本地数据','error');
+showToast('网络错误','error');
 }
 };
 
 /* ====== Excel解析 ====== */
-window.triggerImport=function(){
-document.getElementById('fileInput').click();
-};
-
-window.handleFileSelect=function(e){
-var files=e.target.files;
-if(files.length>0)importFiles(files);
-e.target.value='';
-};
-
-window.handleDragOver=function(e){
-e.preventDefault();
-document.getElementById('importZone').classList.add('dragover');
-};
-window.handleDragLeave=function(e){
-document.getElementById('importZone').classList.remove('dragover');
-};
-window.handleDrop=function(e){
-e.preventDefault();
-document.getElementById('importZone').classList.remove('dragover');
-var files=e.dataTransfer.files;
-if(files.length>0)importFiles(files);
-};
+window.triggerImport=function(){document.getElementById('fileInput').click();};
+window.handleFileSelect=function(e){var files=e.target.files;if(files.length>0)importFiles(files);e.target.value='';};
+window.handleDragOver=function(e){e.preventDefault();document.getElementById('importZone').classList.add('dragover');};
+window.handleDragLeave=function(e){document.getElementById('importZone').classList.remove('dragover');};
+window.handleDrop=function(e){e.preventDefault();document.getElementById('importZone').classList.remove('dragover');if(e.dataTransfer.files.length>0)importFiles(e.dataTransfer.files);};
 
 async function importFiles(files){
-if(typeof XLSX==='undefined'){
-showToast('XLSX库未加载，请刷新页面重试','error');
-return;
-}
+if(typeof XLSX==='undefined'){showToast('XLSX库未加载，请刷新页面','error');return;}
 showToast('正在解析...','info');
 for(var i=0;i<files.length;i++){
 try{
 var result=await parseExcelFile(files[i]);
-if(result.type==='completed'){
-appData.completed=result;
-}else{
-appData.uncompleted=result;
-}
-showToast('「'+(result.type==='completed'?'已完成':'未完成')+'」数据导入成功，共'+result.projects.length+'个项目','success');
-}catch(e){
-showToast('解析失败: '+e.message,'error');
-}
+if(result.type==='completed'){appData.completed=result;}
+else{appData.uncompleted=result;}
+showToast('「'+(result.type==='completed'?'已完成':'未完成')+'」导入成功，共'+result.projects.length+'个项目','success');
+}catch(e){showToast('解析失败: '+e.message,'error');}
 }
 await saveData();
 }
@@ -387,27 +347,22 @@ return new Promise(function(resolve,reject){
 var reader=new FileReader();
 reader.onload=function(e){
 try{
-if(typeof XLSX==='undefined')throw new Error('XLSX库未加载，请刷新页面');
+if(typeof XLSX==='undefined')throw new Error('XLSX库未加载');
 var data=new Uint8Array(e.target.result);
 var wb=XLSX.read(data,{type:'array'});
 var sheet=wb.Sheets[wb.SheetNames[0]];
-if(!sheet||!sheet['!ref'])throw new Error('Excel文件为空或格式异常');
-
-/* 用sheet_to_json自动处理合并单元格，最安全 */
+if(!sheet||!sheet['!ref'])throw new Error('Excel文件为空');
 var rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
 if(rows.length<6)throw new Error('Excel数据行数不足');
 
-/* 检测类型 */
 var title=String(rows[0][0]||'');
 var isCompleted=title.indexOf('已完成')>-1;
-if(title.indexOf('已完成')===-1&&title.indexOf('未完成')===-1){
-isCompleted=file.name.indexOf('已完成')>-1;
-}
+if(title.indexOf('已完成')===-1&&title.indexOf('未完成')===-1){isCompleted=file.name.indexOf('已完成')>-1;}
 
-/* 表头行: row1=一级分类, row2=二级字段, row3=三级字段, row4=说明(跳过) */
-var hRow1=rows[1]||[];
+var hRow1=(rows[1]||[]).slice();
 var hRow2=rows[2]||[];
 var hRow3=rows[3]||[];
+for(var fi=1;fi<hRow1.length;fi++){if(!hRow1[fi]&&hRow1[fi-1])hRow1[fi]=hRow1[fi-1];}
 var maxCol=Math.max(hRow1.length,hRow2.length,hRow3.length);
 
 var headers=[];
@@ -425,24 +380,20 @@ var label=(parts[parts.length-1]||('列'+(ci+1))).replace(/[\s\r\n]+/g,' ');
 headers.push({key:fullKey,category:category,label:label});
 }
 
-/* 数据从row5开始(0-indexed), row4是说明行跳过 */
 var projects=[];
 for(var dr=5;dr<rows.length;dr++){
-var row=rows[dr];
-if(!row)continue;
+var row=rows[dr];if(!row)continue;
 var proj={_type:isCompleted?'已完成':'未完成'};
 var hasData=false;
 for(var dc=0;dc<maxCol;dc++){
-var h=headers[dc];
-if(!h)continue;
+var h=headers[dc];if(!h)continue;
 var val=(dc<row.length)?row[dc]:'';
 proj[h.key]=val;
 if(val!==''&&val!==null&&val!==undefined)hasData=true;
 }
 if(hasData)projects.push(proj);
 }
-
-if(projects.length===0)throw new Error('未找到有效数据行，请检查Excel格式');
+if(projects.length===0)throw new Error('未找到有效数据行');
 resolve({type:isCompleted?'completed':'uncompleted',headers:headers,projects:projects});
 }catch(e){reject(new Error(e.message||'解析异常'));}
 };
@@ -452,103 +403,81 @@ reader.readAsArrayBuffer(file);
 }
 
 /* ====== 渲染 ====== */
-function renderAll(){
-renderDashboard();
-renderTable();
-}
+function renderAll(){renderDashboard();renderTable();}
 
-/* 动态查找字段值（适配不同Excel模板的字段名差异） */
-function findField(obj,patterns){
-for(var key in obj){
-for(var i=0;i<patterns.length;i++){
-if(key.indexOf(patterns[i])>-1)return obj[key];
-}
-}
-return null;
-}
-function getDept(p){return findField(p,['部门','单位'])||'未知';}
-function getYear(p){var v=findField(p,['年份']);if(typeof v==='number')v=String(v);return v||'未知';}
-function getName(p){return findField(p,['项目名称'])||'—';}
-
-function getAllProjects(){
-var list=[];
-(appData.completed.projects||[]).forEach(function(p){list.push(p);});
-(appData.uncompleted.projects||[]).forEach(function(p){list.push(p);});
-return list;
-}
-
-function getFilteredProjects(){
-var all=getAllProjects();
-if(currentFilter==='all')return all;
-var type=currentFilter==='completed'?'已完成':'未完成';
-return all.filter(function(p){return p._type===type;});
-}
-
-/* KPI */
 function renderDashboard(){
 var all=getAllProjects();
 var comp=(appData.completed.projects||[]).length;
 var uncomp=(appData.uncompleted.projects||[]).length;
+var delayed=all.filter(isDelayed).length;
 var depts={};
-all.forEach(function(p){
-var dept=getDept(p);
-depts[dept]=true;
-});
+all.forEach(function(p){depts[getDept(p)]=true;});
 
 var html='';
 html+='<div class="kpi-card"><div class="label">项目总数</div><div class="value">'+all.length+'</div><div class="sub">已完成 '+comp+' / 未完成 '+uncomp+'</div></div>';
 html+='<div class="kpi-card"><div class="label">已完成项目</div><div class="value" style="color:#2E7D32">'+comp+'</div><div class="sub">已全额入账</div></div>';
 html+='<div class="kpi-card"><div class="label">未完成项目</div><div class="value" style="color:#E65100">'+uncomp+'</div><div class="sub">未全额入账</div></div>';
+html+='<div class="kpi-card warn"><div class="label">延期项目</div><div class="value">'+delayed+'</div><div class="sub">'+(all.length>0?'占比 '+Math.round(delayed/all.length*100)+'%':'暂无延期数据')+'</div></div>';
 html+='<div class="kpi-card"><div class="label">涉及部门</div><div class="value">'+Object.keys(depts).length+'</div><div class="sub">覆盖部门数</div></div>';
 document.getElementById('kpiGrid').innerHTML=html;
 
 if(echartsReady&&all.length>0){
 renderDeptChart(all);
 renderYearChart(all);
+renderStatusChart(comp,uncomp,delayed);
 renderFillChart();
-renderStatusChart(comp,uncomp);
 }else{
-document.getElementById('chartDept').innerHTML='<div class="empty-chart">'+(all.length===0?'暂无数据，请先导入Excel':'图表加载中...')+'</div>';
-document.getElementById('chartYear').innerHTML='<div class="empty-chart">'+(all.length===0?'暂无数据，请先导入Excel':'图表加载中...')+'</div>';
-document.getElementById('chartFill').innerHTML='<div class="empty-chart">'+(all.length===0?'暂无数据，请先导入Excel':'图表加载中...')+'</div>';
-document.getElementById('chartStatus').innerHTML='<div class="empty-chart">'+(all.length===0?'暂无数据，请先导入Excel':'图表加载中...')+'</div>';
+var msg=all.length===0?'暂无数据，请先导入Excel':'图表加载中...';
+['chartDept','chartYear','chartStatus','chartFill'].forEach(function(id){
+document.getElementById(id).innerHTML='<div class="empty-chart">'+msg+'</div>';
+});
 }
 }
 
-/* 部门分布 */
+/* 部门分布 - 横向柱状图（部门名太长，饼图放不下） */
 function renderDeptChart(all){
 var deptMap={};
-all.forEach(function(p){
-var dept=p['基本情况.部门']||p['部门']||'未知';
-deptMap[dept]=(deptMap[dept]||0)+1;
-});
+all.forEach(function(p){var dept=getDept(p);deptMap[dept]=(deptMap[dept]||0)+1;});
 var items=Object.keys(deptMap).map(function(k){return{name:k,value:deptMap[k]};}).sort(function(a,b){return b.value-a.value;});
 var chart=echarts.init(document.getElementById('chartDept'));
+chartInstances.push(chart);
 chart.setOption({
-tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
-color:['#006B54','#008667','#4CAF50','#66BB6A','#81C784','#A5D6A7','#C8E6C9','#004D40','#1B5E20','#388E3C'],
-series:[{type:'pie',radius:['40%','70%'],center:['50%','55%'],label:{formatter:'{b}\n{c}个',fontSize:12},data:items,emphasis:{itemStyle:{shadowBlur:10,shadowOffsetX:0,shadowColor:'rgba(0,0,0,0.3)'}}}]
+tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+grid:{left:140,right:40,top:10,bottom:20},
+xAxis:{type:'value',axisLabel:{color:'#999'},splitLine:{lineStyle:{color:'#f0f0f0'}},axisLine:{show:false},axisTick:{show:false}},
+yAxis:{type:'category',data:items.map(function(d){return d.name;}),axisLabel:{color:'#333',fontSize:12},axisLine:{lineStyle:{color:'#ddd'}},axisTick:{show:false}},
+series:[{type:'bar',data:items.map(function(d){return{value:d.value,itemStyle:{color:new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'#008667'},{offset:1,color:'#4CAF50'}]),borderRadius:[0,4,4,0]}};}),barWidth:16,label:{show:true,position:'right',color:'#006B54',fontWeight:'bold',fontSize:12}}]
 });
-window.addEventListener('resize',function(){chart.resize();});
 }
 
 /* 年份分布 */
 function renderYearChart(all){
 var yearMap={};
-all.forEach(function(p){
-var year=getYear(p);
-yearMap[year]=(yearMap[year]||0)+1;
-});
+all.forEach(function(p){var year=getYear(p);yearMap[year]=(yearMap[year]||0)+1;});
 var years=Object.keys(yearMap).sort();
 var vals=years.map(function(y){return yearMap[y];});
 var chart=echarts.init(document.getElementById('chartYear'));
+chartInstances.push(chart);
 chart.setOption({
 tooltip:{trigger:'axis'},
+grid:{left:50,right:30,top:30,bottom:30},
 xAxis:{type:'category',data:years,axisLabel:{color:'#666'},axisLine:{lineStyle:{color:'#ddd'}},axisTick:{show:false}},
 yAxis:{type:'value',axisLabel:{color:'#999'},splitLine:{lineStyle:{color:'#f0f0f0'}},axisLine:{show:false},axisTick:{show:false}},
-series:[{type:'bar',data:vals,itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#008667'},{offset:1,color:'#4CAF50'}]),borderRadius:[4,4,0,0]},barWidth:40,label:{show:true,position:'top',color:'#006B54',fontWeight:'bold'}}]
+series:[{type:'bar',data:vals,itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#008667'},{offset:1,color:'#4CAF50'}]),borderRadius:[4,4,0,0]},barWidth:48,label:{show:true,position:'top',color:'#006B54',fontWeight:'bold',fontSize:13}}]
 });
-window.addEventListener('resize',function(){chart.resize();});
+}
+
+/* 完成状态 */
+function renderStatusChart(comp,uncomp,delayed){
+var chart=echarts.init(document.getElementById('chartStatus'));
+chartInstances.push(chart);
+var data=[{name:'已完成入账',value:comp,itemStyle:{color:'#2E7D32'}},{name:'未完成入账',value:uncomp,itemStyle:{color:'#E65100'}}];
+if(delayed>0){data.push({name:'其中延期',value:delayed,itemStyle:{color:'#D32F2F'}});}
+chart.setOption({
+tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
+legend:{bottom:0,textStyle:{fontSize:12}},
+series:[{type:'pie',radius:['40%','65%'],center:['50%','45%'],label:{formatter:'{b}\n{c}个',fontSize:12},data:data,emphasis:{itemStyle:{shadowBlur:10,shadowColor:'rgba(0,0,0,.2)'}}}]
+});
 }
 
 /* 填报进度 */
@@ -575,76 +504,64 @@ var rates=[];
 var filledCounts=[];
 var totalCounts=[];
 CATEGORIES.forEach(function(c){
-cats.push(c.replace('情况','').replace('项目',''));
+var short=c.replace('情况','').replace('项目','');
 var t=catData[c].total;
 var f=catData[c].filled;
 var rate=t>0?Math.round(f/t*100):0;
+cats.push(short);
 rates.push(rate);
 filledCounts.push(f);
 totalCounts.push(t);
 });
 
 var chart=echarts.init(document.getElementById('chartFill'));
+chartInstances.push(chart);
 chart.setOption({
 tooltip:{trigger:'axis',formatter:function(p){return p[0].name+'<br/>填报率: '+p[0].value+'%<br/>已填: '+filledCounts[p[0].dataIndex]+' / '+totalCounts[p[0].dataIndex];}},
+grid:{left:90,right:40,top:10,bottom:20},
 xAxis:{type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#999'},splitLine:{lineStyle:{color:'#f0f0f0'}},axisLine:{show:false},axisTick:{show:false}},
-yAxis:{type:'category',data:cats,axisLabel:{color:'#666'},axisLine:{lineStyle:{color:'#ddd'}},axisTick:{show:false}},
-series:[{type:'bar',data:rates.map(function(r){return{value:r,itemStyle:{color:r>=80?'#4CAF50':r>=50?'#FF9800':r>0?'#F44336':'#E0E0E0',borderRadius:[0,4,4,0]}};}),barWidth:20,label:{show:true,position:'right',formatter:'{c}%',fontSize:12,color:'#666'}}]
+yAxis:{type:'category',data:cats,axisLabel:{color:'#333',fontSize:12},axisLine:{lineStyle:{color:'#ddd'}},axisTick:{show:false}},
+series:[{type:'bar',data:rates.map(function(r){return{value:r,itemStyle:{color:r>=80?'#4CAF50':r>=50?'#FF9800':r>0?'#F44336':'#E0E0E0',borderRadius:[0,4,4,0]}};}),barWidth:16,label:{show:true,position:'right',formatter:'{c}%',fontSize:12,color:'#666'}}]
 });
-window.addEventListener('resize',function(){chart.resize();});
-}
-
-/* 状态分布 */
-function renderStatusChart(comp,uncomp){
-var chart=echarts.init(document.getElementById('chartStatus'));
-chart.setOption({
-tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
-color:['#2E7D32','#E65100'],
-series:[{type:'pie',radius:['45%','70%'],center:['50%','55%'],label:{formatter:'{b}\n{c}个',fontSize:12},data:[{name:'已完成入账',value:comp},{name:'未完成入账',value:uncomp}],emphasis:{itemStyle:{shadowBlur:10,shadowOffsetX:0,shadowColor:'rgba(0,0,0,0.3)'}}}]
-});
-window.addEventListener('resize',function(){chart.resize();});
 }
 
 /* 数据表 */
 function renderTable(){
 var projects=getFilteredProjects();
 var container=document.getElementById('tableContainer');
-
-if(projects.length===0){
-container.innerHTML='<div class="no-data-hint"><span class="icon">📭</span>暂无项目数据，请导入Excel文件</div>';
-return;
-}
+if(projects.length===0){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">📭 暂无项目数据，请导入Excel文件</div>';return;}
 
 var html='<table class="data-table"><thead><tr>';
-html+='<th>序号</th><th>年份</th><th>部门</th><th>项目名称</th><th>类型</th><th>填报进度</th><th>操作</th>';
+html+='<th>序号</th><th>年份</th><th>部门</th><th>项目名称</th><th>类型</th><th>状态</th><th>填报进度</th><th>操作</th>';
 html+='</tr></thead><tbody>';
 
 projects.forEach(function(p,idx){
 var name=getName(p);
 var dept=getDept(p);
 var year=getYear(p);
+var status=getStatus(p);
+var delayed=isDelayed(p);
 var typeClass=p._type==='已完成'?'completed':'uncompleted';
 
 var allHeaders=p._type==='已完成'?(appData.completed.headers||[]):(appData.uncompleted.headers||[]);
-var filled=0;
-var total=0;
+var filled=0;var total=0;
 allHeaders.forEach(function(h){
-if(CATEGORIES.indexOf(h.category)>-1){
-total++;
-var v=p[h.key];
-if(v!==''&&v!==null&&v!==undefined)filled++;
-}
+if(CATEGORIES.indexOf(h.category)>-1){total++;var v=p[h.key];if(v!==''&&v!==null&&v!==undefined)filled++;}
 });
 var rate=total>0?Math.round(filled/total*100):0;
+
+var statusHtml=status?'<span class="type-tag completed">'+status+'</span>':'—';
+if(delayed)statusHtml='<span class="type-tag delayed">延期</span>';
 
 html+='<tr>';
 html+='<td>'+(idx+1)+'</td>';
 html+='<td>'+year+'</td>';
 html+='<td>'+dept+'</td>';
-html+='<td>'+name+'</td>';
+html+='<td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+name+'">'+name+'</td>';
 html+='<td><span class="type-tag '+typeClass+'">'+p._type+'</span></td>';
+html+='<td>'+statusHtml+'</td>';
 html+='<td><span class="progress-bar"><span class="fill" style="width:'+rate+'%"></span></span>'+rate+'%</td>';
-html+='<td><a class="action-link" onclick="showDetail('+idx+')">查看详情</a></td>';
+html+='<td><a class="action-link" onclick="showDetail('+idx+')">详情</a></td>';
 html+='</tr>';
 });
 
@@ -663,43 +580,30 @@ renderTable();
 /* 详情 */
 window.showDetail=function(idx){
 var projects=getFilteredProjects();
-var p=projects[idx];
-if(!p)return;
-
+var p=projects[idx];if(!p)return;
 var name=getName(p);
 document.getElementById('drawerTitle').textContent=name;
 
 var allHeaders=p._type==='已完成'?(appData.completed.headers||[]):(appData.uncompleted.headers||[]);
 var catGroups={};
-allHeaders.forEach(function(h){
-if(!catGroups[h.category])catGroups[h.category]=[];
-catGroups[h.category].push(h);
-});
+allHeaders.forEach(function(h){if(!catGroups[h.category])catGroups[h.category]=[];catGroups[h.category].push(h);});
 
 var html='';
 CATEGORIES.forEach(function(cat){
-var fields=catGroups[cat];
-if(!fields||fields.length===0)return;
-html+='<div class="category-section">';
-html+='<div class="category-title">'+cat+'</div>';
+var fields=catGroups[cat];if(!fields||fields.length===0)return;
+html+='<div class="category-section"><div class="category-title">'+cat+'</div>';
 fields.forEach(function(h){
-var val=p[h.key];
-var isEmpty=val===''||val===null||val===undefined;
-html+='<div class="field-row">';
-html+='<div class="field-label">'+h.label+'</div>';
-html+='<div class="field-value'+(isEmpty?' empty':'')+'">'+(isEmpty?'未填写':val)+'</div>';
-html+='</div>';
+var val=p[h.key];var isEmpty=val===''||val===null||val===undefined;
+html+='<div class="field-row"><div class="field-label">'+h.label+'</div><div class="field-value'+(isEmpty?' empty':'')+'">'+(isEmpty?'未填写':val)+'</div></div>';
 });
 html+='</div>';
 });
 
-/* 其他未分类字段 */
 var otherFields=allHeaders.filter(function(h){return CATEGORIES.indexOf(h.category)===-1;});
 if(otherFields.length>0){
 html+='<div class="category-section"><div class="category-title">其他</div>';
 otherFields.forEach(function(h){
-var val=p[h.key];
-var isEmpty=val===''||val===null||val===undefined;
+var val=p[h.key];var isEmpty=val===''||val===null||val===undefined;
 html+='<div class="field-row"><div class="field-label">'+h.label+'</div><div class="field-value'+(isEmpty?' empty':'')+'">'+(isEmpty?'未填写':val)+'</div></div>';
 });
 html+='</div>';
@@ -715,60 +619,39 @@ document.getElementById('drawerOverlay').classList.remove('show');
 document.getElementById('detailDrawer').classList.remove('show');
 };
 
-/* 清除数据 */
 window.clearAllData=function(){
-if(!confirm('确定清除所有数据？此操作不可撤销！'))return;
+if(!confirm('确定清除所有数据？'))return;
 appData={lastUpdate:null,completed:{headers:[],projects:[]},uncompleted:{headers:[],projects:[]}};
-localStorage.removeItem('projectData');
-renderAll();
-updateSync('red','暂无数据');
-showToast('数据已清除','info');
+localStorage.removeItem('projectData');renderAll();updateSync('red','暂无数据');showToast('数据已清除','info');
 };
 
-/* 设置 */
 window.openSettings=function(){
-var pat=localStorage.getItem('github_pat')||'';
-document.getElementById('patInput').value=pat;
+document.getElementById('patInput').value=localStorage.getItem('github_pat')||'';
 document.getElementById('settingsModal').classList.add('show');
 };
-window.closeSettings=function(){
-document.getElementById('settingsModal').classList.remove('show');
-};
+window.closeSettings=function(){document.getElementById('settingsModal').classList.remove('show');};
 window.saveSettings=function(){
 var pat=document.getElementById('patInput').value.trim();
-if(pat){localStorage.setItem('github_pat',pat);}
-else{localStorage.removeItem('github_pat');}
-closeSettings();
-showToast('设置已保存','success');
+if(pat)localStorage.setItem('github_pat',pat);else localStorage.removeItem('github_pat');
+closeSettings();showToast('设置已保存','success');
 };
 
-/* ====== 工具函数 ====== */
-function updateSync(color,text){
-var el=document.getElementById('syncStatus');
-el.innerHTML='<span class="sync-dot '+color+'"></span>'+text;
-}
-
-function formatTime(iso){
-if(!iso)return'';
-try{
-var d=new Date(iso);
-return d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-}catch(e){return iso;}
-}
-
+/* ====== 工具 ====== */
+function updateSync(color,text){document.getElementById('syncStatus').innerHTML='<span class="sync-dot '+color+'"></span>'+text;}
+function formatTime(iso){if(!iso)return'';try{return new Date(iso).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}}
 var toastTimer=null;
-function showToast(msg,type){
-var el=document.getElementById('toast');
-el.textContent=msg;
-el.className='toast '+type+' show';
-if(toastTimer)clearTimeout(toastTimer);
-toastTimer=setTimeout(function(){el.classList.remove('show');},3000);
+function showToast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='toast '+type+' show';if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.classList.remove('show');},3000);}
+
+window.addEventListener('resize',function(){chartInstances.forEach(function(c){try{c.resize();}catch(e){}});});
+
+function getFilteredProjects(){
+var all=getAllProjects();
+if(currentFilter==='all')return all;
+var type=currentFilter==='completed'?'已完成':'未完成';
+return all.filter(function(p){return p._type===type;});
 }
-window.showToast=showToast;
 
-/* ====== 初始化 ====== */
 loadData();
-
 })();
 </script>
 </body>
