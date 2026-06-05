@@ -506,7 +506,7 @@ document.getElementById('kpiGrid').innerHTML=html;
 if(echartsReady&&all.length>0){
 renderDeptChart(all);
 renderYearChart(all);
-renderStatusChart(comp,uncomp,delayed);
+renderStatusChart(comp,uncomp,noStatus,delayed);
 renderFillChart();
 }else{
 var msg=all.length===0?'暂无数据，请先导入Excel':'图表加载中...';
@@ -550,10 +550,10 @@ series:[{type:'bar',data:vals,itemStyle:{color:new echarts.graphic.LinearGradien
 }
 
 /* 完成状态 */
-function renderStatusChart(comp,uncomp,delayed){
+function renderStatusChart(comp,uncomp,noStatus,delayed){
 var chart=echarts.init(document.getElementById('chartStatus'));
 chartInstances.push(chart);
-var data=[{name:'已完成',value:comp,itemStyle:{color:'#2E7D32'}},{name:'未完成',value:uncomp,itemStyle:{color:'#E65100'}}];
+var data=[{name:'已完成',value:comp,itemStyle:{color:'#2E7D32'}},{name:'未完成',value:uncomp+noStatus,itemStyle:{color:'#E65100'}}];
 if(delayed>0){data.push({name:'其中延期',value:delayed,itemStyle:{color:'#D32F2F'}});}
 chart.setOption({
 tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
