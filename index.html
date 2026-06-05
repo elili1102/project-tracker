@@ -301,7 +301,7 @@ return list;
 async function loadData(){
 updateSync('yellow','加载中...');
 try{
-var resp=await fetch('https://raw.githubusercontent.com/'+REPO+'/main/'+DATA_FILE+'?t='+Date.now());
+var resp=await fetch('https://elili1102.github.io/project-tracker/'+DATA_FILE+'?t='+Date.now());
 if(resp.ok){
 var data=await resp.json();
 appData=data;
@@ -346,7 +346,7 @@ else{var err=await putResp.json();updateSync('red','同步失败');showToast('�
 window.syncFromCloud=async function(){
 updateSync('yellow','正在同步...');
 try{
-var resp=await fetch('https://raw.githubusercontent.com/'+REPO+'/main/'+DATA_FILE+'?t='+Date.now());
+var resp=await fetch('https://elili1102.github.io/project-tracker/'+DATA_FILE+'?t='+Date.now());
 if(resp.ok){var data=await resp.json();appData=data;localStorage.setItem('projectData',JSON.stringify(data));updateSync('green','已同步 '+formatTime(data.lastUpdate));renderAll();showToast('数据同步成功','success');}
 else{updateSync('red','同步失败');showToast('云端暂无数据','warning');}
 }catch(e){
