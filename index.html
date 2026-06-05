@@ -432,9 +432,9 @@ for(var ri=0;ri<3;ri++){
 var v=grid[ri][idx];
 if(v&&parts.indexOf(v)===-1)parts.push(v);
 }
-var fullKey=parts.join('.');
-var category=parts[0]||'其他';
-var label=parts[parts.length-1]||('列'+(idx+1));
+var fullKey=parts.join('.').replace(/\s+/g,'');
+var category=(parts[0]||'其他').replace(/\s+/g,'');
+var label=(parts[parts.length-1]||('列'+(idx+1))).replace(/\s+/g,' ');
 headers.push({key:fullKey,category:category,label:label});
 }
 
@@ -468,6 +468,19 @@ renderDashboard();
 renderTable();
 }
 
+/* 动态查找字段值（适配不同Excel模板的字段名差异） */
+function findField(obj,patterns){
+for(var key in obj){
+for(var i=0;i<patterns.length;i++){
+if(key.indexOf(patterns[i])>-1)return obj[key];
+}
+}
+return null;
+}
+function getDept(p){return findField(p,['部门','单位'])||'未知';}
+function getYear(p){var v=findField(p,['年份']);if(typeof v==='number')v=String(v);return v||'未知';}
+function getName(p){return findField(p,['项目名称'])||'—';}
+
 function getAllProjects(){
 var list=[];
 (appData.completed.projects||[]).forEach(function(p){list.push(p);});
@@ -489,7 +502,7 @@ var comp=(appData.completed.projects||[]).length;
 var uncomp=(appData.uncompleted.projects||[]).length;
 var depts={};
 all.forEach(function(p){
-var dept=p['基本情况.部门']||p['部门']||'未知';
+var dept=getDept(p);
 depts[dept]=true;
 });
 
@@ -534,8 +547,7 @@ window.addEventListener('resize',function(){chart.resize();});
 function renderYearChart(all){
 var yearMap={};
 all.forEach(function(p){
-var year=p['基本情况.年份']||p['年份']||'未知';
-if(typeof year==='number')year=String(year);
+var year=getYear(p);
 yearMap[year]=(yearMap[year]||0)+1;
 });
 var years=Object.keys(yearMap).sort();
@@ -619,9 +631,9 @@ html+='<th>序号</th><th>年份</th><th>部门</th><th>项目名称</th><th>类
 html+='</tr></thead><tbody>';
 
 projects.forEach(function(p,idx){
-var name=p['基本情况.项目名称']||p['项目名称']||'—';
-var dept=p['基本情况.部门']||p['部门']||'—';
-var year=p['基本情况.年份']||p['年份']||'—';
+var name=getName(p);
+var dept=getDept(p);
+var year=getYear(p);
 var typeClass=p._type==='已完成'?'completed':'uncompleted';
 
 var allHeaders=p._type==='已完成'?(appData.completed.headers||[]):(appData.uncompleted.headers||[]);
@@ -665,7 +677,7 @@ var projects=getFilteredProjects();
 var p=projects[idx];
 if(!p)return;
 
-var name=p['基本情况.项目名称']||p['项目名称']||'未知项目';
+var name=getName(p);
 document.getElementById('drawerTitle').textContent=name;
 
 var allHeaders=p._type==='已完成'?(appData.completed.headers||[]):(appData.uncompleted.headers||[]);
