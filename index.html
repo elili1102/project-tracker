@@ -199,8 +199,8 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 <div class="toolbar-right">
 <div class="filter-group">
 <button class="filter-btn active" onclick="setFilter('all',this)">全部</button>
-<button class="filter-btn" onclick="setFilter('completed',this)">已完成入账</button>
-<button class="filter-btn" onclick="setFilter('uncompleted',this)">未完成入账</button>
+<button class="filter-btn" onclick="setFilter('completed',this)">已完成</button>
+<button class="filter-btn" onclick="setFilter('uncompleted',this)">未完成</button>
 </div>
 </div>
 </div>
@@ -482,16 +482,18 @@ function renderAll(){renderDashboard();renderTable();}
 
 function renderDashboard(){
 var all=getAllProjects();
-var comp=(appData.completed.projects||[]).length;
-var uncomp=(appData.uncompleted.projects||[]).length;
+var statusKey='基本情况.项目状态';
+var comp=all.filter(function(p){var s=(p[statusKey]||'').toString().trim();return s==='已完成';}).length;
+var uncomp=all.filter(function(p){var s=(p[statusKey]||'').toString().trim();return s!=='已完成'&&s!=='';}).length;
+var noStatus=all.filter(function(p){var s=(p[statusKey]||'').toString().trim();return s==='';}).length;
 var delayed=all.filter(isDelayed).length;
 var depts={};
 all.forEach(function(p){depts[getDept(p)]=true;});
 
 var html='';
-html+='<div class="kpi-card"><div class="label">项目总数</div><div class="value">'+all.length+'</div><div class="sub">已入账 '+comp+' / 未入账 '+uncomp+'</div></div>';
-html+='<div class="kpi-card"><div class="label">已完成入账</div><div class="value" style="color:#2E7D32">'+comp+'</div><div class="sub">已全额入账项目</div></div>';
-html+='<div class="kpi-card"><div class="label">未完成入账</div><div class="value" style="color:#E65100">'+uncomp+'</div><div class="sub">未全额入账项目</div></div>';
+html+='<div class="kpi-card"><div class="label">项目总数</div><div class="value">'+all.length+'</div><div class="sub">已完成 '+comp+' / 未完成 '+(uncomp+noStatus)+'</div></div>';
+html+='<div class="kpi-card"><div class="label">已完成</div><div class="value" style="color:#2E7D32">'+comp+'</div><div class="sub">'+(all.length>0?'占比 '+Math.round(comp/all.length*100)+'%':'暂无数据')+'</div></div>';
+html+='<div class="kpi-card"><div class="label">未完成</div><div class="value" style="color:#E65100">'+(uncomp+noStatus)+'</div><div class="sub">'+(all.length>0?'占比 '+Math.round((uncomp+noStatus)/all.length*100)+'%':'暂无数据')+'</div></div>';
 html+='<div class="kpi-card warn"><div class="label">延期项目</div><div class="value">'+delayed+'</div><div class="sub">'+(all.length>0?'占比 '+Math.round(delayed/all.length*100)+'%':'暂无延期数据')+'</div></div>';
 html+='<div class="kpi-card"><div class="label">涉及部门</div><div class="value">'+Object.keys(depts).length+'</div><div class="sub">覆盖部门数</div></div>';
 document.getElementById('kpiGrid').innerHTML=html;
@@ -546,7 +548,7 @@ series:[{type:'bar',data:vals,itemStyle:{color:new echarts.graphic.LinearGradien
 function renderStatusChart(comp,uncomp,delayed){
 var chart=echarts.init(document.getElementById('chartStatus'));
 chartInstances.push(chart);
-var data=[{name:'已完成入账',value:comp,itemStyle:{color:'#2E7D32'}},{name:'未完成入账',value:uncomp,itemStyle:{color:'#E65100'}}];
+var data=[{name:'已完成',value:comp,itemStyle:{color:'#2E7D32'}},{name:'未完成',value:uncomp,itemStyle:{color:'#E65100'}}];
 if(delayed>0){data.push({name:'其中延期',value:delayed,itemStyle:{color:'#D32F2F'}});}
 chart.setOption({
 tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
@@ -654,7 +656,8 @@ var p=projects[idx];if(!p)return;
 var name=getName(p);
 document.getElementById('drawerTitle').textContent=name;
 
-var allHeaders=p._type==='已完成'?(appData.completed.headers||[]):(appData.uncompleted.headers||[]);
+var allHeaders=(appData.completed.headers||[]).concat(appData.uncompleted.headers||[]);
+var seen={};allHeaders=allHeaders.filter(function(h){if(seen[h.key])return false;seen[h.key]=true;return true;});
 var catGroups={};
 allHeaders.forEach(function(h){if(!catGroups[h.category])catGroups[h.category]=[];catGroups[h.category].push(h);});
 
@@ -717,8 +720,9 @@ window.addEventListener('resize',function(){chartInstances.forEach(function(c){t
 function getFilteredProjects(){
 var all=getAllProjects();
 if(currentFilter==='all')return all;
-var type=currentFilter==='completed'?'已完成':'未完成';
-return all.filter(function(p){return p._type===type;});
+var statusKey='基本情况.项目状态';
+if(currentFilter==='completed')return all.filter(function(p){return(p[statusKey]||'').toString().trim()==='已完成';});
+return all.filter(function(p){var s=(p[statusKey]||'').toString().trim();return s!=='已完成';});
 }
 
 loadData();
