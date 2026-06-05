@@ -186,14 +186,11 @@ body{font-family:'Microsoft YaHei','微软雅黑',sans-serif;background:var(--bg
 <div class="chart-card"><h3>年份项目分布</h3><div class="chart-box" id="chartYear"></div></div>
 </div>
 <div class="chart-grid">
-<div class="chart-card"><h3>完成情况</h3><div class="chart-box" id="chartStatus"></div></div>
 <div class="chart-card"><h3>项目储备情况</h3><div class="chart-box" id="chartReserve"></div></div>
-</div>
-<div class="chart-grid">
 <div class="chart-card"><h3>项目进度情况</h3><div class="chart-box" id="chartProgress"></div></div>
-<div class="chart-card"><h3>资金执行情况</h3><div class="chart-box" id="chartFund"></div></div>
 </div>
 <div class="chart-grid">
+<div class="chart-card"><h3>资金执行情况</h3><div class="chart-box" id="chartFund"></div></div>
 <div class="chart-card"><h3>质保履行情况</h3><div class="chart-box" id="chartWarranty"></div></div>
 </div>
 </div>
@@ -513,14 +510,13 @@ document.getElementById('kpiGrid').innerHTML=html;
 if(echartsReady&&all.length>0){
 renderDeptChart(all);
 renderYearChart(all);
-renderStatusChart(comp,uncomp,noStatus,delayed);
 renderReserveChart(all);
 renderProgressChart(all);
 renderFundChart(all);
 renderWarrantyChart(all);
 }else{
 var msg=all.length===0?'暂无数据，请先导入Excel':'图表加载中...';
-['chartDept','chartYear','chartStatus','chartReserve','chartProgress','chartFund','chartWarranty'].forEach(function(id){
+['chartDept','chartYear','chartReserve','chartProgress','chartFund','chartWarranty'].forEach(function(id){
 document.getElementById(id).innerHTML='<div class="empty-chart">'+msg+'</div>';
 });
 }
@@ -559,20 +555,6 @@ series:[{type:'bar',data:vals,itemStyle:{color:new echarts.graphic.LinearGradien
 });
 }
 
-/* 完成状态 */
-function renderStatusChart(comp,uncomp,noStatus,delayed){
-var chart=echarts.init(document.getElementById('chartStatus'));
-chartInstances.push(chart);
-var data=[{name:'已完成',value:comp,itemStyle:{color:'#2E7D32'}},{name:'未完成',value:uncomp+noStatus,itemStyle:{color:'#E65100'}}];
-if(delayed>0){data.push({name:'其中延期',value:delayed,itemStyle:{color:'#D32F2F'}});}
-chart.setOption({
-tooltip:{trigger:'item',formatter:'{b}: {c}个 ({d}%)'},
-legend:{bottom:0,textStyle:{fontSize:12}},
-series:[{type:'pie',radius:['40%','65%'],center:['50%','45%'],label:{formatter:'{b}\n{c}个',fontSize:12},data:data,emphasis:{itemStyle:{shadowBlur:10,shadowColor:'rgba(0,0,0,.2)'}}}]
-});
-}
-
-/* 填报进度 */
 /* 项目储备情况 - 批次分布 */
 function renderReserveChart(all){
 var key='项目储备情况.技术服务项目批次';
